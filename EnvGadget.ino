@@ -34,33 +34,59 @@ void loop() {
   display.drawString(128, 0, tempStr);
   display.drawString(128, 16, humStr);
 
-  int points = 80;
+  int points = 78;
   float data[points];
   fillSin(data, points, t);
-  drawGraph(&display, 0, 0, points + 2, 32, data, points);
+  drawGraph(&display, 0, 0, 80, 32, data, points);
  
   display.display();
 
   t += 2.;
 
-  delay(1000);
+  delay(100);
 }
 
 void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float* data, int dataLength) {
   display->drawRect(x, y, width, height);
 
-  int lastY = height - data[0] * height;
+  float normalizedData[dataLength];
+  float min, max;
+  normalize(data, normalizedData, dataLength, &min, &max);
+
+  int lastY = height - normalizedData[0] * height;
   for (int i = 1; i < dataLength; i++)
   {
     int xp = x + i + 1;
-    int yp = y + height - data[i] * height - 1;
+    int yp = y + height - normalizedData[i] * (height - 1);
     display->drawLine(xp - 1, lastY, xp, yp);
     lastY = yp;
   }
 }
 
+void normalize(float* data, float* normalized, int n, float* minOut, float* maxOut) {
+  float min = INT16_MAX + 0.;
+  float max = INT16_MIN + 0.;
+  for (int i = 0; i < n; i++) {
+    if (min > data[i]) {
+      min = data[i];
+    }
+    if (max < data[i]) {
+      max = data[i];
+    }
+  }
+
+  minOut = &min;
+  maxOut = &max;
+
+  float diff = max - min;
+
+  for (int i = 0; i < n; i++) {
+    normalized[i] = (data[i] - min) / diff;
+  }
+}
+
 void fillSin(float* data, int points, float t) {
   for (int i = 0; i < points; i++) {
-    data[i] = (sin(degToRad((i + t)*8))+1)/2;
+    data[i] = sin(degToRad((i + t)*8)) + sin(degToRad((i - t)*2));
   }
 }
