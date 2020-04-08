@@ -1,4 +1,4 @@
-#include <Wire.h>
+#include "Wire.h"
 #include "SSD1306.h"
 #include "DHTesp.h"
 
@@ -8,7 +8,7 @@
 #define M_PI 3.14159265358979323846264338327950288
 #define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
 
-SSD1306  display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32); //Address set here 0x3C that I found in the scanner, and pins defined as D2 (SDA/Serial Data), and D5 (SCK/Serial Clock).
+SSD1306  display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32);
 DHTesp dht;
 
 void setup() {                
@@ -19,6 +19,9 @@ void setup() {
 }
 
 float t = .0;
+
+int points = 100;
+float data[100];
 
 void loop() {
   float temperature = dht.getTemperature();
@@ -34,10 +37,8 @@ void loop() {
   display.drawString(128, 0, tempStr);
   display.drawString(128, 16, humStr);
 
-  int points = 78;
-  float data[points];
   fillSin(data, points, t);
-  drawGraph(&display, 0, 0, 80, 32, data, points);
+  drawGraph(&display, 0, 0, 62, 32, data, points);
  
   display.display();
 
@@ -49,15 +50,18 @@ void loop() {
 void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float* data, int dataLength) {
   display->drawRect(x, y, width, height);
 
-  float normalizedData[dataLength];
+  int displayedLength = min(width - 2, dataLength);
+  int dStart = max(dataLength - displayedLength, 0);
+
+  float normalizedData[displayedLength];
   float min, max;
-  normalize(data, normalizedData, dataLength, &min, &max);
+  normalize(data + dStart, normalizedData, displayedLength, &min, &max);
 
   int lastY = height - normalizedData[0] * height;
-  for (int i = 1; i < dataLength; i++)
+  for (int i = 1; i < displayedLength; i++)
   {
     int xp = x + i + 1;
-    int yp = y + height - normalizedData[i] * (height - 1);
+    int yp = y + (height - 1) - normalizedData[i] * (height - 2);
     display->drawLine(xp - 1, lastY, xp, yp);
     lastY = yp;
   }
