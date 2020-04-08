@@ -18,9 +18,9 @@ void setup() {
   display.flipScreenVertically();
 }
 
-
-int points = 100;
-float data[100];
+#define maxPoints 60
+int points = 0;
+float data[maxPoints];
 
 float temperature = 0.;
 float humidity = 0.;
@@ -28,6 +28,7 @@ float humidity = 0.;
 void loop() {
   long time = millis();
   updateSensor(time);
+  updateData(time);
   updateDisplay(time);
 }
 
@@ -38,6 +39,14 @@ void updateSensor(long t) {
     humidity = dht.getHumidity();
 
     nextSensorUpdate = t + dht.getMinimumSamplingPeriod();
+  }
+}
+
+long nextDataUpdate = 0;
+void updateData(long t) {
+  if (t >= nextDataUpdate) {
+    addDataValue(temperature);
+    nextDataUpdate = t + 1000;
   }
 }
 
@@ -55,12 +64,23 @@ void updateDisplay(long t) {
     display.drawString(128, 0, tempStr);
     display.drawString(128, 16, humStr);
 
-    fillSin(data, points, t * 0.01);
     drawGraph(&display, 0, 0, 62, 32, data, points);
   
     display.display();
 
-    nextDisplayUpdate = t + 10;
+    nextDisplayUpdate = t + 50;
+  }
+}
+
+void addDataValue(float value) {
+  if (points < maxPoints) {
+    data[points] = value;
+    points++;
+  } else {
+    for (int i = 0; i < points - 1; i++) {
+      data[i] = data[i + 1];
+    }
+    data[points - 1] = value;
   }
 }
 
