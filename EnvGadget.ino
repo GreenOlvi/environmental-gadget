@@ -18,33 +18,50 @@ void setup() {
   display.flipScreenVertically();
 }
 
-float t = .0;
 
 int points = 100;
 float data[100];
 
+float temperature = 0.;
+float humidity = 0.;
+
 void loop() {
-  float temperature = dht.getTemperature();
-  char tempStr[10];
-  sprintf(tempStr, "%.1f°C", temperature);
+  long time = millis();
+  updateSensor(time);
+  updateDisplay(time);
+}
 
-  float humidity = dht.getHumidity();
-  char humStr[4];
-  sprintf(humStr, "%.0f%%", humidity);
+long nextSensorUpdate = 0;
+void updateSensor(long t) {
+  if (t >= nextSensorUpdate) {
+    temperature = dht.getTemperature();
+    humidity = dht.getHumidity();
+
+    nextSensorUpdate = t + dht.getMinimumSamplingPeriod();
+  }
+}
+
+long nextDisplayUpdate = 0;
+void updateDisplay(long t) {
+  if (t >= nextDisplayUpdate) {
+    char tempStr[10];
+    sprintf(tempStr, "%.1f°C", temperature);
+
+    char humStr[4];
+    sprintf(humStr, "%.0f%%", humidity);
+    
+    display.clear();
+    display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_RIGHT);
+    display.drawString(128, 0, tempStr);
+    display.drawString(128, 16, humStr);
+
+    fillSin(data, points, t * 0.01);
+    drawGraph(&display, 0, 0, 62, 32, data, points);
   
-  display.clear();
-  display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_RIGHT);
-  display.drawString(128, 0, tempStr);
-  display.drawString(128, 16, humStr);
+    display.display();
 
-  fillSin(data, points, t);
-  drawGraph(&display, 0, 0, 62, 32, data, points);
- 
-  display.display();
-
-  t += 2.;
-
-  delay(100);
+    nextDisplayUpdate = t + 10;
+  }
 }
 
 void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float* data, int dataLength) {
@@ -91,6 +108,6 @@ void normalize(float* data, float* normalized, int n, float* minOut, float* maxO
 
 void fillSin(float* data, int points, float t) {
   for (int i = 0; i < points; i++) {
-    data[i] = sin(degToRad((i + t)*8)) + sin(degToRad((i - t)*2));
+    data[i] = sin(degToRad((i + t)*8)) + sin(degToRad((i + t)*3));
   }
 }
