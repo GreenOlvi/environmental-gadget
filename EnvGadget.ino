@@ -1,6 +1,7 @@
-#include "Wire.h"
-#include "SSD1306.h"
-#include "DHTesp.h"
+#include <Wire.h>
+#include <SSD1306.h>
+#include <DHTesp.h>
+#include "WindowedStack.h"
 
 #define DISPLAY_ADDR 0x3c
 #define ONE_WIRE_BUS D7
@@ -21,10 +22,6 @@ void setup() {
 }
 
 int buttonState = HIGH;
-
-#define maxPoints 80
-int points = 0;
-float data[maxPoints];
 
 float temperature = NAN;
 float humidity = NAN;
@@ -61,15 +58,16 @@ void updateSensor(long t) {
   if (t >= nextSensorUpdate) {
     temperature = dht.getTemperature();
     humidity = dht.getHumidity();
-
     nextSensorUpdate = t + dht.getMinimumSamplingPeriod();
   }
 }
 
+WindowedStack minuteData = WindowedStack(60);
+
 unsigned long nextDataUpdate = 0;
 void updateData(long t) {
   if (t >= nextDataUpdate) {
-    addDataValue(temperature);
+    minuteData.push(temperature);
     nextDataUpdate = t + 1000;
   }
 }
@@ -88,7 +86,7 @@ void updateDisplay(long t) {
     display.drawString(128, 0, tempStr);
     display.drawString(128, 16, humStr);
 
-    drawGraph(&display, 0, 0, maxPoints + 2, 32, data, points);
+    drawGraph(&display, 0, 0, minuteData.WindowSize() + 2, 32, minuteData.getData(), minuteData.Count());
 
     display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
     if (buttonState == HIGH) {
@@ -100,18 +98,6 @@ void updateDisplay(long t) {
     display.display();
 
     nextDisplayUpdate = t + 50;
-  }
-}
-
-void addDataValue(float value) {
-  if (points < maxPoints) {
-    data[points] = value;
-    points++;
-  } else {
-    for (int i = 0; i < points - 1; i++) {
-      data[i] = data[i + 1];
-    }
-    data[points - 1] = value;
   }
 }
 
