@@ -114,9 +114,11 @@ void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float*
   int lastY = height - normalizedData[0] * height;
   for (int i = 1; i < displayedLength; i++)
   {
-    int xp = x + i + 1;
     int yp = y + (height - 1) - normalizedData[i] * (height - 2);
-    display->drawLine(xp - 1, lastY, xp, yp);
+    if (lastY != NAN && yp != NAN) {
+      int xp = x + i + 1;
+      display->drawLine(xp - 1, lastY, xp, yp);
+    }
     lastY = yp;
   }
 }
