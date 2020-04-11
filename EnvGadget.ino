@@ -4,6 +4,7 @@
 
 #define DISPLAY_ADDR 0x3c
 #define ONE_WIRE_BUS D7
+#define BUTTON_PIN D6
 
 #define M_PI 3.14159265358979323846264338327950288
 #define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
@@ -12,27 +13,50 @@ SSD1306  display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32);
 DHTesp dht;
 
 void setup() {                
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
   Serial.begin(74880);
   dht.setup(ONE_WIRE_BUS, DHTesp::AM2302);
   display.init();
   display.flipScreenVertically();
 }
 
-#define maxPoints 60
+int buttonState = HIGH;
+
+#define maxPoints 80
 int points = 0;
 float data[maxPoints];
 
-float temperature = 0.;
-float humidity = 0.;
+float temperature = NAN;
+float humidity = NAN;
 
 void loop() {
   long time = millis();
+  updateButton(time);
   updateSensor(time);
   updateData(time);
   updateDisplay(time);
 }
 
-long nextSensorUpdate = 0;
+int lastButtonState = buttonState;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;
+void updateButton(long t) {
+  int read = digitalRead(BUTTON_PIN);
+
+  if (read != lastButtonState) {
+    lastDebounceTime = t;
+  }
+
+  if (t - lastDebounceTime > debounceDelay) {
+    if (read != buttonState) {
+      buttonState = read;
+    }
+  }
+
+  lastButtonState = read;
+}
+
+unsigned long nextSensorUpdate = 0;
 void updateSensor(long t) {
   if (t >= nextSensorUpdate) {
     temperature = dht.getTemperature();
@@ -42,7 +66,7 @@ void updateSensor(long t) {
   }
 }
 
-long nextDataUpdate = 0;
+unsigned long nextDataUpdate = 0;
 void updateData(long t) {
   if (t >= nextDataUpdate) {
     addDataValue(temperature);
@@ -50,7 +74,7 @@ void updateData(long t) {
   }
 }
 
-long nextDisplayUpdate = 0;
+unsigned long nextDisplayUpdate = 0;
 void updateDisplay(long t) {
   if (t >= nextDisplayUpdate) {
     char tempStr[10];
@@ -64,7 +88,14 @@ void updateDisplay(long t) {
     display.drawString(128, 0, tempStr);
     display.drawString(128, 16, humStr);
 
-    drawGraph(&display, 0, 0, 62, 32, data, points);
+    drawGraph(&display, 0, 0, maxPoints + 2, 32, data, points);
+
+    display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
+    if (buttonState == HIGH) {
+      display.drawString(85, 20, "H");
+    } else {
+      display.drawString(85, 20, "L");
+    }
   
     display.display();
 
