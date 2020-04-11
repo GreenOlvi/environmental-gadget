@@ -63,12 +63,33 @@ void updateSensor(long t) {
 }
 
 WindowedStack minuteData = WindowedStack(60);
+WindowedStack hourData = WindowedStack(60);
 
-unsigned long nextDataUpdate = 0;
+unsigned long nextMinuteDataUpdate = 0;
+unsigned long nextHourDataUpdate = 0;
 void updateData(long t) {
-  if (t >= nextDataUpdate) {
+  if (t >= nextMinuteDataUpdate) {
     minuteData.push(temperature);
-    nextDataUpdate = t + 1000;
+    nextMinuteDataUpdate = t + 1000;
+  }
+
+  if (t >= nextHourDataUpdate && minuteData.Count() > 0) {
+    float* minute = minuteData.getData();
+
+    float sum;
+    int count;
+    for (int i = 0; i < minuteData.Count(); i++) {
+      if (minute[i] != NAN) {
+        sum += minute[i];
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      hourData.push(sum / count);
+    }
+
+    nextHourDataUpdate = t + 60 * 1000;
   }
 }
 
@@ -86,7 +107,11 @@ void updateDisplay(long t) {
     display.drawString(128, 0, tempStr);
     display.drawString(128, 16, humStr);
 
-    drawGraph(&display, 0, 0, minuteData.WindowSize() + 2, 32, minuteData.getData(), minuteData.Count());
+    if (buttonState == HIGH) {
+      drawGraph(&display, 0, 0, hourData.WindowSize() + 2, 32, hourData.getData(), hourData.Count());
+    } else {
+      drawGraph(&display, 0, 0, minuteData.WindowSize() + 2, 32, minuteData.getData(), minuteData.Count());
+    }
 
     display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
     if (buttonState == HIGH) {
