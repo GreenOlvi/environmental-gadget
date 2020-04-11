@@ -106,6 +106,7 @@ void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float*
 
   int displayedLength = min(width - 2, dataLength);
   int dStart = max(dataLength - displayedLength, 0);
+  int xStart = width - 1 - displayedLength;
 
   float normalizedData[displayedLength];
   float min, max;
@@ -116,7 +117,7 @@ void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float*
   {
     int yp = y + (height - 1) - normalizedData[i] * (height - 2);
     if (lastY != NAN && yp != NAN) {
-      int xp = x + i + 1;
+      int xp = xStart + x + i;
       display->drawLine(xp - 1, lastY, xp, yp);
     }
     lastY = yp;
