@@ -2,6 +2,7 @@
 #include <SSD1306.h>
 #include <DHTesp.h>
 #include "WindowedStack.h"
+#include "font.h"
 
 #define DISPLAY_ADDR 0x3c
 #define ONE_WIRE_BUS D7
@@ -102,8 +103,10 @@ void updateDisplay(long t) {
     char humStr[4];
     sprintf(humStr, "%.0f%%", humidity);
     
-    display.clear();
     display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_RIGHT);
+    display.setFont(ArialMT_Plain_16);
+
+    display.clear();
     display.drawString(128, 0, tempStr);
     display.drawString(128, 16, humStr);
 
@@ -135,7 +138,7 @@ void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float*
 
   float normalizedData[displayedLength];
   float min, max;
-  normalize(data + dStart, normalizedData, displayedLength, &min, &max);
+  normalize(data + dStart, normalizedData, displayedLength, min, max);
 
   int lastY = height - normalizedData[0] * height;
   for (int i = 1; i < displayedLength; i++)
@@ -147,9 +150,21 @@ void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float*
     }
     lastY = yp;
   }
+
+  char maxStr[10];
+  sprintf(maxStr, "%.1f°C", max);
+
+  char minStr[10];
+  sprintf(minStr, "%.1f°C", min);
+
+  display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
+  display->setFont((const uint8_t *)Dialog_plain_8);
+
+  display->drawString(x+1, y, maxStr);
+  display->drawString(x+1, y + height - 10, minStr);
 }
 
-void normalize(float* data, float* normalized, int n, float* minOut, float* maxOut) {
+void normalize(float* data, float* normalized, int n, float &minOut, float &maxOut) {
   float min = INT16_MAX + 0.;
   float max = INT16_MIN + 0.;
   for (int i = 0; i < n; i++) {
@@ -161,8 +176,8 @@ void normalize(float* data, float* normalized, int n, float* minOut, float* maxO
     }
   }
 
-  minOut = &min;
-  maxOut = &max;
+  minOut = min;
+  maxOut = max;
 
   float diff = max - min;
 
