@@ -1,3 +1,5 @@
+#ifndef Dialog_plain_8_font
+#define Dialog_plain_8_font
 // Created by http://oleddisplay.squix.ch/ Consider a donation
 // In case of problems make sure that you are using the font file with the correct version!
 const char Dialog_plain_8[] PROGMEM = {
@@ -456,3 +458,4 @@ const char Dialog_plain_8[] PROGMEM = {
 	0x00,0x00,0xFE,0x03,0x90,0x00,0x90,0x00,0x60,	// 254
 	0x00,0x00,0x14,0x02,0xE0,0x03,0x64,0x00,0x10	// 255
 };
+#endif
