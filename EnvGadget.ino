@@ -6,6 +6,8 @@
 #include "WindowedStack.h"
 #include "font.h"
 
+#define DEBUG
+
 #define DISPLAY_ADDR 0x3c
 #define ONE_WIRE_BUS D7
 #define OTHER_ONE_WIRE_BUS D5
@@ -32,6 +34,7 @@ void setup() {
 }
 
 int buttonState = HIGH;
+int currentFrame = 0;
 
 float temperature = NAN;
 float humidity = NAN;
@@ -42,7 +45,7 @@ void loop() {
   updateButton(time);
   updateSensors(time);
   updateData(time);
-  updateDisplay(time);
+  updateDisplay(&display, time);
 }
 
 int lastButtonState = buttonState;
@@ -59,7 +62,17 @@ void updateButton(long t) {
   if (t - lastDebounceTime > debounceDelay) {
     if (read != buttonState) {
       buttonState = read;
+      if (buttonState == LOW) {
+        onButtonPress();
+      }
     }
+  }
+}
+
+void onButtonPress() {
+  currentFrame++;
+  if (currentFrame > 1) {
+    currentFrame = 0;
   }
 }
 
@@ -80,6 +93,7 @@ void updateSensors(long t) {
     } else {
       outTemperature = NAN;
     }
+    nextAuxSensorUpdate = t + AUX_SENSOR_UPDATE_DELAY;
   }
 }
 
@@ -114,38 +128,50 @@ void updateData(long t) {
 }
 
 unsigned long nextDisplayUpdate = 0;
-void updateDisplay(long t) {
+void updateDisplay(OLEDDisplay* display, long t) {
   if (t >= nextDisplayUpdate) {
-    char tempStr[10];
-    sprintf(tempStr, "%.1f°C", temperature);
-
-    char humStr[4];
-    sprintf(humStr, "%.0f%%", humidity);
+    display->clear();
     
-    display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_RIGHT);
-    display.setFont(ArialMT_Plain_16);
+    if (currentFrame == 0) {
+      char line1[10];
+      sprintf(line1, "%.1f°C", temperature);
+      char line2[4];
+      sprintf(line2, "%.0f%%", humidity);
 
-    display.clear();
-    display.drawString(128, 0, tempStr);
-    display.drawString(128, 16, humStr);
+      drawGraphAnd2Lines(display, &hourData, line1, line2);
+    } else if (currentFrame == 1) {
+      char line1[10];
+      sprintf(line1, "%.1f°C", outTemperature);
 
-    if (buttonState == HIGH) {
-      drawGraph(&display, 0, 0, hourData.WindowSize() + 2, 32, hourData.getData(), hourData.Count());
-    } else {
-      drawGraph(&display, 0, 0, minuteData.WindowSize() + 2, 32, minuteData.getData(), minuteData.Count());
+      drawGraphAnd2Lines(display, &auxHourData, line1, "out");
     }
 
-    display.setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
+    #ifdef DEBUG
+    display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
     if (buttonState == HIGH) {
-      display.drawString(85, 20, "H");
+      display->drawString(85, 20, "H");
     } else {
-      display.drawString(85, 20, "L");
+      display->drawString(85, 20, "L");
     }
-  
-    display.display();
 
+    char frameStr[1];
+    sprintf(frameStr, "%d", currentFrame);
+    display->drawString(75, 20, frameStr);
+    #endif
+
+    display->display();
     nextDisplayUpdate = t + DISPLAY_UPDATE_DELAY;
   }
+}
+
+void drawGraphAnd2Lines(OLEDDisplay* display, WindowedStack* graphData, char* line1, char* line2) {
+    display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_RIGHT);
+    display->setFont(ArialMT_Plain_16);
+
+    display->drawString(128, 0, line1);
+    display->drawString(128, 16, line2);
+
+    drawGraph(display, 0, 0, 62, 32, graphData->getData(), graphData->Count());
 }
 
 void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float* data, int dataLength) {
