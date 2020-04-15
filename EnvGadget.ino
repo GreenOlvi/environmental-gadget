@@ -1,23 +1,32 @@
 #include <Wire.h>
 #include <SSD1306.h>
 #include <DHTesp.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include "WindowedStack.h"
 #include "font.h"
 
 #define DISPLAY_ADDR 0x3c
 #define ONE_WIRE_BUS D7
+#define OTHER_ONE_WIRE_BUS D5
 #define BUTTON_PIN D6
 
 #define M_PI 3.14159265358979323846264338327950288
 #define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
 
+#define AUX_SENSOR_UPDATE_DELAY 60 * 1000
+#define DISPLAY_UPDATE_DELAY 50
+
 SSD1306  display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32);
 DHTesp dht;
+OneWire ds(OTHER_ONE_WIRE_BUS);
+DallasTemperature auxSensors(&ds);
 
 void setup() {                
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  Serial.begin(74880);
+  Serial.begin(115200);
   dht.setup(ONE_WIRE_BUS, DHTesp::AM2302);
+  auxSensors.begin();
   display.init();
   display.flipScreenVertically();
 }
@@ -26,11 +35,12 @@ int buttonState = HIGH;
 
 float temperature = NAN;
 float humidity = NAN;
+float outTemperature = NAN;
 
 void loop() {
   long time = millis();
   updateButton(time);
-  updateSensor(time);
+  updateSensors(time);
   updateData(time);
   updateDisplay(time);
 }
@@ -43,6 +53,7 @@ void updateButton(long t) {
 
   if (read != lastButtonState) {
     lastDebounceTime = t;
+    lastButtonState = read;
   }
 
   if (t - lastDebounceTime > debounceDelay) {
@@ -50,44 +61,52 @@ void updateButton(long t) {
       buttonState = read;
     }
   }
-
-  lastButtonState = read;
 }
 
 unsigned long nextSensorUpdate = 0;
-void updateSensor(long t) {
+unsigned long nextAuxSensorUpdate = 0;
+void updateSensors(long t) {
   if (t >= nextSensorUpdate) {
     temperature = dht.getTemperature();
     humidity = dht.getHumidity();
     nextSensorUpdate = t + dht.getMinimumSamplingPeriod();
+  }
+
+  if (t >= nextAuxSensorUpdate) {
+    auxSensors.requestTemperatures();
+    float tempC = auxSensors.getTempCByIndex(0);
+    if (tempC != DEVICE_DISCONNECTED_C) {
+      outTemperature = tempC;
+    } else {
+      outTemperature = NAN;
+    }
   }
 }
 
 WindowedStack minuteData = WindowedStack(60);
 WindowedStack hourData = WindowedStack(60);
 
+WindowedStack auxMinuteData = WindowedStack(60);
+WindowedStack auxHourData = WindowedStack(60);
+
 unsigned long nextMinuteDataUpdate = 0;
 unsigned long nextHourDataUpdate = 0;
 void updateData(long t) {
   if (t >= nextMinuteDataUpdate) {
     minuteData.push(temperature);
+    auxMinuteData.push(outTemperature);
     nextMinuteDataUpdate = t + 1000;
   }
 
-  if (t >= nextHourDataUpdate && minuteData.Count() > 0) {
-    float* minute = minuteData.getData();
-
-    float sum;
-    int count;
-    for (int i = 0; i < minuteData.Count(); i++) {
-      if (minute[i] != NAN) {
-        sum += minute[i];
-        count++;
-      }
+  if (t >= nextHourDataUpdate){
+    if (minuteData.Count() > 0) {
+      float tempAvg = Average(minuteData.getData(), minuteData.Count());
+      hourData.push(tempAvg);
     }
 
-    if (count > 0) {
-      hourData.push(sum / count);
+    if (auxMinuteData.Count() > 0) {
+      float auxMinuteAvg = Average(auxMinuteData.getData(), auxMinuteData.Count());
+      auxHourData.push(auxMinuteAvg);
     }
 
     nextHourDataUpdate = t + 60 * 1000;
@@ -125,7 +144,7 @@ void updateDisplay(long t) {
   
     display.display();
 
-    nextDisplayUpdate = t + 50;
+    nextDisplayUpdate = t + DISPLAY_UPDATE_DELAY;
   }
 }
 
@@ -183,6 +202,23 @@ void normalize(float* data, float* normalized, int n, float &minOut, float &maxO
 
   for (int i = 0; i < n; i++) {
     normalized[i] = (data[i] - min) / diff;
+  }
+}
+
+float Average(float* data, int dataLength) {
+  float sum = 0.;
+  int count = 0;
+  for (int i = 0; i < dataLength; i++) {
+    if (data[i] != NAN) {
+      sum += data[i];
+      count++;
+    }
+  }
+
+  if (count > 0) {
+    return sum / count;
+  } else {
+    return NAN;
   }
 }
 
