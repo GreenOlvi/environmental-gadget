@@ -13,9 +13,6 @@
 #define OTHER_ONE_WIRE_BUS D5
 #define BUTTON_PIN D6
 
-#define M_PI 3.14159265358979323846264338327950288
-#define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
-
 #define AUX_SENSOR_UPDATE_DELAY 60 * 1000
 #define DISPLAY_UPDATE_DELAY 50
 
@@ -245,11 +242,5 @@ float Average(float* data, int dataLength) {
     return sum / count;
   } else {
     return NAN;
-  }
-}
-
-void fillSin(float* data, int points, float t) {
-  for (int i = 0; i < points; i++) {
-    data[i] = sin(degToRad((i + t)*8)) + sin(degToRad((i + t)*3));
   }
 }
