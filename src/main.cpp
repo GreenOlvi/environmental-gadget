@@ -37,18 +37,17 @@ float temperature = NAN;
 float humidity = NAN;
 float outTemperature = NAN;
 
-void loop() {
-  long time = millis();
-  updateButton(time);
-  updateSensors(time);
-  updateData(time);
-  updateDisplay(&display, time);
+void onButtonPress() {
+  currentFrame++;
+  if (currentFrame > 1) {
+    currentFrame = 0;
+  }
 }
 
 int lastButtonState = buttonState;
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
-void updateButton(long t) {
+void updateButton(unsigned long t) {
   int read = digitalRead(BUTTON_PIN);
 
   if (read != lastButtonState) {
@@ -66,16 +65,9 @@ void updateButton(long t) {
   }
 }
 
-void onButtonPress() {
-  currentFrame++;
-  if (currentFrame > 1) {
-    currentFrame = 0;
-  }
-}
-
 unsigned long nextSensorUpdate = 0;
 unsigned long nextAuxSensorUpdate = 0;
-void updateSensors(long t) {
+void updateSensors(unsigned long t) {
   if (t >= nextSensorUpdate) {
     temperature = dht.getTemperature();
     humidity = dht.getHumidity();
@@ -94,6 +86,23 @@ void updateSensors(long t) {
   }
 }
 
+float Average(float* data, int dataLength) {
+  float sum = 0.;
+  int count = 0;
+  for (int i = 0; i < dataLength; i++) {
+    if (data[i] != NAN) {
+      sum += data[i];
+      count++;
+    }
+  }
+
+  if (count > 0) {
+    return sum / count;
+  } else {
+    return NAN;
+  }
+}
+
 WindowedStack minuteData = WindowedStack(60);
 WindowedStack hourData = WindowedStack(60);
 
@@ -102,7 +111,7 @@ WindowedStack auxHourData = WindowedStack(60);
 
 unsigned long nextMinuteDataUpdate = 0;
 unsigned long nextHourDataUpdate = 0;
-void updateData(long t) {
+void updateData(unsigned long t) {
   if (t >= nextMinuteDataUpdate) {
     minuteData.push(temperature);
     auxMinuteData.push(outTemperature);
@@ -124,52 +133,28 @@ void updateData(long t) {
   }
 }
 
-unsigned long nextDisplayUpdate = 0;
-void updateDisplay(OLEDDisplay* display, long t) {
-  if (t >= nextDisplayUpdate) {
-    display->clear();
-    
-    if (currentFrame == 0) {
-      char line1[10];
-      sprintf(line1, "%.1f°C", temperature);
-      char line2[4];
-      sprintf(line2, "%.0f%%", humidity);
-
-      drawGraphAnd2Lines(display, &hourData, line1, line2);
-    } else if (currentFrame == 1) {
-      char line1[10];
-      sprintf(line1, "%.1f°C", outTemperature);
-
-      drawGraphAnd2Lines(display, &auxHourData, line1, "out");
+void normalize(float* data, float* normalized, int n, float &minOut, float &maxOut) {
+  float min = INT16_MAX + 0.;
+  float max = INT16_MIN + 0.;
+  for (int i = 0; i < n; i++) {
+    if (min > data[i]) {
+      min = data[i];
     }
-
-    #ifdef DEBUG
-    display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
-    if (buttonState == HIGH) {
-      display->drawString(85, 20, "H");
-    } else {
-      display->drawString(85, 20, "L");
+    if (max < data[i]) {
+      max = data[i];
     }
+  }
 
-    char frameStr[1];
-    sprintf(frameStr, "%d", currentFrame);
-    display->drawString(75, 20, frameStr);
-    #endif
+  minOut = min;
+  maxOut = max;
 
-    display->display();
-    nextDisplayUpdate = t + DISPLAY_UPDATE_DELAY;
+  float diff = max - min;
+
+  for (int i = 0; i < n; i++) {
+    normalized[i] = (data[i] - min) / diff;
   }
 }
 
-void drawGraphAnd2Lines(OLEDDisplay* display, WindowedStack* graphData, char* line1, char* line2) {
-    display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_RIGHT);
-    display->setFont(ArialMT_Plain_16);
-
-    display->drawString(128, 0, line1);
-    display->drawString(128, 16, line2);
-
-    drawGraph(display, 0, 0, 62, 32, graphData->getData(), graphData->Count());
-}
 
 void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float* data, int dataLength) {
   display->drawRect(x, y, width, height);
@@ -206,41 +191,57 @@ void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float*
   display->drawString(x+1, y + height - 10, minStr);
 }
 
-void normalize(float* data, float* normalized, int n, float &minOut, float &maxOut) {
-  float min = INT16_MAX + 0.;
-  float max = INT16_MIN + 0.;
-  for (int i = 0; i < n; i++) {
-    if (min > data[i]) {
-      min = data[i];
+void drawGraphAnd2Lines(OLEDDisplay* display, WindowedStack* graphData, const char* line1, const char* line2) {
+    display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_RIGHT);
+    display->setFont(ArialMT_Plain_16);
+
+    display->drawString(128, 0, line1);
+    display->drawString(128, 16, line2);
+
+    drawGraph(display, 0, 0, 62, 32, graphData->getData(), graphData->Count());
+}
+
+unsigned long nextDisplayUpdate = 0;
+void updateDisplay(OLEDDisplay* display, unsigned long t) {
+  if (t >= nextDisplayUpdate) {
+    display->clear();
+    
+    if (currentFrame == 0) {
+      char line1[10];
+      sprintf(line1, "%.1f°C", temperature);
+      char line2[4];
+      sprintf(line2, "%.0f%%", humidity);
+
+      drawGraphAnd2Lines(display, &hourData, line1, line2);
+    } else if (currentFrame == 1) {
+      char line1[10];
+      sprintf(line1, "%.1f°C", outTemperature);
+
+      drawGraphAnd2Lines(display, &auxHourData, line1, "out");
     }
-    if (max < data[i]) {
-      max = data[i];
+
+    #ifdef DEBUG
+    display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
+    if (buttonState == HIGH) {
+      display->drawString(85, 20, "H");
+    } else {
+      display->drawString(85, 20, "L");
     }
-  }
 
-  minOut = min;
-  maxOut = max;
+    char frameStr[1];
+    sprintf(frameStr, "%d", currentFrame);
+    display->drawString(75, 20, frameStr);
+    #endif
 
-  float diff = max - min;
-
-  for (int i = 0; i < n; i++) {
-    normalized[i] = (data[i] - min) / diff;
+    display->display();
+    nextDisplayUpdate = t + DISPLAY_UPDATE_DELAY;
   }
 }
 
-float Average(float* data, int dataLength) {
-  float sum = 0.;
-  int count = 0;
-  for (int i = 0; i < dataLength; i++) {
-    if (data[i] != NAN) {
-      sum += data[i];
-      count++;
-    }
-  }
-
-  if (count > 0) {
-    return sum / count;
-  } else {
-    return NAN;
-  }
+void loop() {
+  unsigned long time = millis();
+  updateButton(time);
+  updateSensors(time);
+  updateData(time);
+  updateDisplay(&display, time);
 }

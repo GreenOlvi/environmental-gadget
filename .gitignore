@@ -1,6 +1,12 @@
+# Created by https://www.gitignore.io/api/vim,platformio,visualstudiocode
+# Edit at https://www.gitignore.io/?templates=vim,platformio,visualstudiocode
 
-# Created by https://www.gitignore.io/api/vim,visualstudiocode
-# Edit at https://www.gitignore.io/?templates=vim,visualstudiocode
+### PlatformIO ###
+.pioenvs
+.piolibdeps
+.clang_complete
+.gcc-flags.json
+.pio
 
 ### Vim ###
 # Swap
@@ -31,11 +37,12 @@ tags
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
-!.vscode/launch.json
 !.vscode/extensions.json
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
-
-# End of https://www.gitignore.io/api/vim,visualstudiocode
