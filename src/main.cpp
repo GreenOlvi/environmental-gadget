@@ -3,8 +3,11 @@
 #include <DHTesp.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <ESP8266WiFi.h>
+
 #include "WindowedStack.h"
 #include "font.h"
+#include "secrets.h"
 
 #define DEBUG
 
@@ -21,6 +24,9 @@ DHTesp dht;
 OneWire ds(OTHER_ONE_WIRE_BUS);
 DallasTemperature auxSensors(&ds);
 
+const char* ssid = STASSID;
+const char* password = STAPSK;
+
 void setup() {                
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   Serial.begin(115200);
@@ -28,6 +34,8 @@ void setup() {
   auxSensors.begin();
   display.init();
   display.flipScreenVertically();
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
 }
 
 int buttonState = HIGH;
@@ -39,7 +47,7 @@ float outTemperature = NAN;
 
 void onButtonPress() {
   currentFrame++;
-  if (currentFrame > 1) {
+  if (currentFrame > 2) {
     currentFrame = 0;
   }
 }
@@ -133,6 +141,24 @@ void updateData(unsigned long t) {
   }
 }
 
+void drawWiFiInfo(OLEDDisplay* display) {
+  display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
+  display->setFont(ArialMT_Plain_10);
+
+  if (WiFi.isConnected() == false) {
+    display->drawString(0, 0, "Not connected");
+    return;
+  }
+
+  char connStr[30];
+  sprintf(connStr, "Connected to %s", WiFi.SSID().c_str());
+  display->drawString(0, 0, connStr);
+  sprintf(connStr, "%s", WiFi.localIP().toString().c_str());
+  display->drawString(0, 10, connStr);
+  sprintf(connStr, "%s", WiFi.macAddress().c_str());
+  display->drawString(0, 20, connStr);
+}
+
 void normalize(float* data, float* normalized, int n, float &minOut, float &maxOut) {
   float min = INT16_MAX + 0.;
   float max = INT16_MIN + 0.;
@@ -154,7 +180,6 @@ void normalize(float* data, float* normalized, int n, float &minOut, float &maxO
     normalized[i] = (data[i] - min) / diff;
   }
 }
-
 
 void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float* data, int dataLength) {
   display->drawRect(x, y, width, height);
@@ -218,6 +243,8 @@ void updateDisplay(OLEDDisplay* display, unsigned long t) {
       sprintf(line1, "%.1f°C", outTemperature);
 
       drawGraphAnd2Lines(display, &auxHourData, line1, "out");
+    } else if (currentFrame == 2) {
+      drawWiFiInfo(display);
     }
 
     #ifdef DEBUG
