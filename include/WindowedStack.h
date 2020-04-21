@@ -1,8 +1,6 @@
 #ifndef WindowedStack_h
 #define WindowedStack_h
 
-#include "Arduino.h"
-
 class WindowedStack
 {
     public:
@@ -11,7 +9,6 @@ class WindowedStack
         float* getData();
         int Count();
         int WindowSize();
-        // float GetValue(int i);
         ~WindowedStack();
     private:
         int _n, _i, _count;
