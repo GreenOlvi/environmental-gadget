@@ -1,8 +1,16 @@
-#include "SSD1306.h"
+#include <SSD1306.h>
+
 #include "Graph.h"
 #include "font.h"
 
-void normalize(float* data, float* normalized, int n, float &minOut, float &maxOut) {
+void normalize(float* data, float* normalized, int n, float min, float max) {
+  float diff = max - min;
+  for (int i = 0; i < n; i++) {
+    normalized[i] = (data[i] - min) / diff;
+  }
+}
+
+void findRange(float* data, int n, float &minOut, float &maxOut) {
   float min = INT16_MAX + 0.;
   float max = INT16_MIN + 0.;
   for (int i = 0; i < n; i++) {
@@ -16,12 +24,6 @@ void normalize(float* data, float* normalized, int n, float &minOut, float &maxO
 
   minOut = min;
   maxOut = max;
-
-  float diff = max - min;
-
-  for (int i = 0; i < n; i++) {
-    normalized[i] = (data[i] - min) / diff;
-  }
 }
 
 void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float* data, int dataLength) {
@@ -33,6 +35,14 @@ void drawGraph(OLEDDisplay* display, int x, int y, int width, int height, float*
 
   float normalizedData[displayedLength];
   float min, max;
+  findRange(data + dStart, displayedLength, min, max);
+
+  if (max - min < 1.) {
+    float diff = 1. - (max - min);
+    min -= diff / 2;
+    max += diff / 2;
+  }
+
   normalize(data + dStart, normalizedData, displayedLength, min, max);
 
   int lastY = height - normalizedData[0] * height;
