@@ -10,6 +10,7 @@
 #include "GraphFrame.h"
 #include "WiFiFrame.h"
 #include "Helpers.h"
+#include "Mqtt.h"
 #include "secrets.h"
 
 #define DISPLAY_ADDR 0x3c
@@ -24,6 +25,8 @@ SSD1306 display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32);
 DHTesp dht;
 OneWire ds(OTHER_ONE_WIRE_BUS);
 DallasTemperature auxSensors(&ds);
+
+MqttClient mqtt("envGadget", MQTT_HOST, MQTT_PORT);
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
@@ -41,7 +44,7 @@ float outTemperature = NAN;
 TemperatureHumidityGraphFrame insideMinuteTempFrame = TemperatureHumidityGraphFrame(&minuteData, &temperature, &humidity);
 TemperatureHumidityGraphFrame insideHourTempFrame = TemperatureHumidityGraphFrame(&hourData, &temperature, &humidity);
 TemperatureGraphFrame outsideHourTempFrame = TemperatureGraphFrame(&auxHourData, &outTemperature, "out");
-WiFiFrame wifiFrame = WiFiFrame();
+WiFiFrame wifiFrame = WiFiFrame(&mqtt);
 
 Frame* frames[] = {
   &insideMinuteTempFrame,
@@ -114,22 +117,33 @@ void updateSensors(unsigned long t) {
   }
 }
 
+void publish(const char* type, float value) {
+  char topic[30];
+  sprintf(topic, "env/bedroom/%s", type);
+  mqtt.publish(topic, value);
+}
+
 unsigned long nextMinuteDataUpdate = 0;
 unsigned long nextHourDataUpdate = 0;
 void updateData(unsigned long t) {
   if (t >= nextMinuteDataUpdate) {
     minuteData.push(temperature);
     auxMinuteData.push(outTemperature);
+
     nextMinuteDataUpdate = t + 1000;
   }
 
   if (t >= nextHourDataUpdate){
     if (minuteData.Count() > 0) {
-      hourData.push(average(&minuteData));
+      float avg = average(&minuteData);
+      hourData.push(avg);
+      publish("temp_in", avg);
     }
 
     if (auxMinuteData.Count() > 0) {
-      auxHourData.push(average(&auxMinuteData));
+      float avg = average(&auxMinuteData);
+      auxHourData.push(avg);
+      publish("temp_out", avg);
     }
 
     nextHourDataUpdate = t + 60 * 1000;
@@ -150,6 +164,7 @@ void updateDisplay(OLEDDisplay* display, unsigned long t) {
 void loop() {
   unsigned long time = millis();
   updateButton(time);
+  mqtt.update(time);
   updateSensors(time);
   updateData(time);
   updateDisplay(&display, time);
