@@ -12,8 +12,6 @@
 #include "Helpers.h"
 #include "secrets.h"
 
-// #define DEBUG
-
 #define DISPLAY_ADDR 0x3c
 #define ONE_WIRE_BUS D7
 #define OTHER_ONE_WIRE_BUS D5
@@ -22,7 +20,7 @@
 #define AUX_SENSOR_UPDATE_DELAY 60 * 1000
 #define DISPLAY_UPDATE_DELAY 50
 
-SSD1306  display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32);
+SSD1306 display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32);
 DHTesp dht;
 OneWire ds(OTHER_ONE_WIRE_BUS);
 DallasTemperature auxSensors(&ds);
@@ -143,20 +141,6 @@ void updateDisplay(OLEDDisplay* display, unsigned long t) {
   if (t >= nextDisplayUpdate) {
     display->clear();
     frames[currentFrame]->draw(display);
-
-    #ifdef DEBUG
-    display->setTextAlignment(OLEDDISPLAY_TEXT_ALIGNMENT::TEXT_ALIGN_LEFT);
-    display->setFont(ArialMT_Plain_10);
-    if (buttonState == HIGH) {
-      display->drawString(85, 20, "H");
-    } else {
-      display->drawString(85, 20, "L");
-    }
-
-    char frameStr[1];
-    sprintf(frameStr, "%d", currentFrame);
-    display->drawString(75, 20, frameStr);
-    #endif
 
     display->display();
     nextDisplayUpdate = t + DISPLAY_UPDATE_DELAY;

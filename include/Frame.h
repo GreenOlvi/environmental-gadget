@@ -3,11 +3,9 @@
 
 #include <SSD1306.h>
 
-class Frame
-{
+class Frame {
     public:
-        Frame();
-        virtual void draw(OLEDDisplay* display);
+        virtual void draw(OLEDDisplay* display) = 0;
 };
 
 #endif
