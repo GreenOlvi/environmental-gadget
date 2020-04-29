@@ -5,13 +5,15 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
-#define RECONNECT_DELAY 1000
+#include "Updatable.h"
 
-class MqttClient {
+#define RECONNECT_DELAY 10000
+
+class MqttClient : public Updatable {
     public:
         MqttClient(const char* clientId, const char* hostname, unsigned short port = 1883);
         bool isConnected();
-        void update(unsigned long t);
+        void update(unsigned long);
         void publish(const char* topic, const char* payload);
         void publish(const char* type, float value);
     private:
