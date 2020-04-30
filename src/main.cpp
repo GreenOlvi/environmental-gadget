@@ -53,6 +53,13 @@ Frame* frames[] = {
 
 const int framesCount = _countof(frames);
 
+Updatable* updatables[] = {
+  &mqtt,
+  &displayModule,
+};
+
+const int updatablesCount = _countof(updatables);
+
 void setup() {                
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   dht.setup(ONE_WIRE_BUS, DHTesp::AM2302);
@@ -151,9 +158,12 @@ void updateData(unsigned long t) {
 
 void loop() {
   unsigned long time = millis();
+
   updateButton(time);
-  mqtt.update(time);
   updateSensors(time);
   updateData(time);
-  displayModule.update(time);
+
+  for (int i = 0; i < updatablesCount; i++) {
+    updatables[i]->update(time);
+  }
 }
