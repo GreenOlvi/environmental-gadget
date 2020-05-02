@@ -27,11 +27,29 @@ float* WindowedStack::getData() {
     return _count < _n ? a : a + _i;
 }
 
-int WindowedStack::Count() {
+int WindowedStack::count() {
     return _count;
 }
 
-int WindowedStack::WindowSize() {
+float WindowedStack::average() {
+    float* data = getData();
+    float sum = 0.;
+    int count = 0;
+    for (int i = 0; i < _count; i++) {
+        if (data[i] != NAN) {
+        sum += data[i];
+        count++;
+        }
+    }
+
+    if (count > 0) {
+        return sum / count;
+    } else {
+        return NAN;
+    }
+}
+
+int WindowedStack::windowSize() {
     return _n;
 }
 

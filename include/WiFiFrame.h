@@ -7,6 +7,7 @@
 
 class WiFiFrame : public Frame {
     public:
+        WiFiFrame();
         WiFiFrame(MqttClient* mqtt);
         virtual void draw(OLEDDisplay* display);
 

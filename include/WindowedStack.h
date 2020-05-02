@@ -4,11 +4,12 @@
 class WindowedStack
 {
     public:
-        WindowedStack(int size);
-        void push(float value);
+        explicit WindowedStack(const int size);
+        void push(const float value);
         float* getData();
-        int Count();
-        int WindowSize();
+        int count();
+        float average();
+        int windowSize();
         ~WindowedStack();
     private:
         int _n, _i, _count;

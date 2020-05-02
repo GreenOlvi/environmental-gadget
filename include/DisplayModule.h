@@ -4,13 +4,13 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SSD1306Wire.h>
-#include "Updatable.h"
+#include "Module.h"
 #include "Frame.h"
 
 #define DISPLAY_ADDR 0x3c
 #define DISPLAY_UPDATE_DELAY 50
 
-class DisplayModule : public Updatable {
+class DisplayModule : public Module {
     public:
         DisplayModule(void);
         void setup(void);

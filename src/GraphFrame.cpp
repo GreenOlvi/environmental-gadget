@@ -7,7 +7,7 @@ GraphFrame::GraphFrame(WindowedStack* graphData) {
 }
 
 void GraphFrame::draw(OLEDDisplay* display) {
-    drawGraph(display, 0, 0, 62, 32, _graphData->getData(), _graphData->Count());
+    drawGraph(display, 0, 0, 62, 32, _graphData->getData(), _graphData->count());
 }
 
 TemperatureGraphFrame::TemperatureGraphFrame(WindowedStack* graphData, float* temperature) : GraphFrame(graphData) {
