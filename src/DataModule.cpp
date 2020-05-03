@@ -6,7 +6,7 @@ DataModule::DataModule() : _tempData(), _auxTempData(), _humidityData() {
 void DataModule::setup() {
 }
 
-void DataModule::update(unsigned long t) {
+void DataModule::update(const unsigned long t) {
     _tempData.update(t);
     _auxTempData.update(t);
     _humidityData.update(t);

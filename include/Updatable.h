@@ -3,7 +3,7 @@
 
 class Updatable {
     public:
-        virtual void update(unsigned long t) = 0;
+        virtual void update(const unsigned long t) = 0;
 };
 
 #endif

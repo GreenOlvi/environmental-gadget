@@ -13,8 +13,8 @@
 class DisplayModule : public Module {
     public:
         DisplayModule(void);
-        void setup(void);
-        void update(unsigned long t);
+        void setup(void) override;
+        void update(const unsigned long t) override;
         OLEDDisplay* getDisplay(void);
         void setCurrentFrame(Frame* frame);
     private:

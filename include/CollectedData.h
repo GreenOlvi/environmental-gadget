@@ -11,7 +11,7 @@ class CollectedData : public Updatable {
         RollingBuffer* getMinuteData();
         RollingBuffer* getHourData();
 
-        void update(unsigned long t) override;
+        void update(const unsigned long t) override;
         void setValue(float value);
         float getValue() const;
 
@@ -22,10 +22,10 @@ class CollectedData : public Updatable {
         RollingBuffer _hourData;
 
         unsigned long _lastSecondUpdate = 0;
-        void secondUpdate(unsigned long t);
+        void secondUpdate(const unsigned long t);
 
         unsigned long _lastMinuteUpdate = 0;
-        void minuteUpdate(unsigned long t);
+        void minuteUpdate(const unsigned long t);
 };
 
 #endif

@@ -81,7 +81,7 @@ void setup() {
 int buttonState = HIGH;
 int currentFrame = 0;
 
-void onButtonPress() {
+void onButtonPress(const unsigned long t) {
   currentFrame++;
   if (currentFrame >= framesCount) {
     currentFrame = 0;
@@ -89,10 +89,14 @@ void onButtonPress() {
   displayModule.setCurrentFrame(frames[currentFrame]);
 }
 
+void onButtonRelease(const unsigned long t) {
+
+}
+
 int lastButtonState = buttonState;
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
-void updateButton(unsigned long t) {
+void updateButton(const unsigned long t) {
   int read = digitalRead(BUTTON_PIN);
 
   if (read != lastButtonState) {
@@ -104,7 +108,9 @@ void updateButton(unsigned long t) {
     if (read != buttonState) {
       buttonState = read;
       if (buttonState == LOW) {
-        onButtonPress();
+        onButtonPress(t);
+      } else {
+        onButtonRelease(t);
       }
     }
   }
@@ -112,7 +118,7 @@ void updateButton(unsigned long t) {
 
 unsigned long nextSensorUpdate = 0;
 unsigned long nextAuxSensorUpdate = 0;
-void updateSensors(unsigned long t) {
+void updateSensors(const unsigned long t) {
   if (t >= nextSensorUpdate) {
     temperature = dht.getTemperature();
     humidity = dht.getHumidity();

@@ -9,8 +9,8 @@ class DataModule : public Module {
     public:
         DataModule();
 
-        void setup();
-        void update(unsigned long t) override;
+        void setup() override;
+        void update(const unsigned long t) override;
 
         void setTemp(float temp);
         void setAuxTemp(float temp);
@@ -25,12 +25,6 @@ class DataModule : public Module {
         CollectedData* getHumidityData();
 
     private:
-        void secondUpdate(unsigned long t);
-        void minuteUpdate(unsigned long t);
-
-        unsigned long lastSecondUpdate = 0;
-        unsigned long lastMinuteUpdate = 0;
-
         CollectedData _tempData;
         CollectedData _auxTempData;
         CollectedData _humidityData;
