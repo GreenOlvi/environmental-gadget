@@ -1,34 +1,36 @@
 #ifndef GraphFrame_h
 #define GraphFrame_h
 
+#include "SSD1306.h"
+#include "Graph.h"
 #include "Frame.h"
-#include "WindowedStack.h"
+#include "RollingBuffer.h"
 
 class GraphFrame : public Frame {
     public:
-        GraphFrame(WindowedStack* graphData);
+        GraphFrame(RollingBuffer* graphData);
         virtual void draw(OLEDDisplay* display);
     private:
-        WindowedStack* _graphData;
+        const RollingBuffer* _graphData;
 };
 
 class TemperatureGraphFrame : public GraphFrame {
     public:
-        TemperatureGraphFrame(WindowedStack* graphData, float* temperature);
-        TemperatureGraphFrame(WindowedStack* graphData, float* temperature, const char* line2);
+        TemperatureGraphFrame(RollingBuffer* graphData, float* temperature);
+        TemperatureGraphFrame(RollingBuffer* graphData, float* temperature, const char* line2);
         virtual void draw(OLEDDisplay* display);
     private:
-        float* _temperature;
+        const float* _temperature;
         const char* _line2;
 };
 
 class TemperatureHumidityGraphFrame : public GraphFrame {
     public:
-        TemperatureHumidityGraphFrame(WindowedStack* graphData, float* temperature, float* humidity);
+        TemperatureHumidityGraphFrame(RollingBuffer* graphData, float* temperature, float* humidity);
         virtual void draw(OLEDDisplay* display);
     private:
-        float* _temperature;
-        float* _humidity;
+        const float* _temperature;
+        const float* _humidity;
 };
 
 #endif

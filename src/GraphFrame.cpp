@@ -1,23 +1,18 @@
-#include "SSD1306.h"
 #include "GraphFrame.h"
-#include "Graph.h"
 
-GraphFrame::GraphFrame(WindowedStack* graphData) {
-    _graphData = graphData;
+GraphFrame::GraphFrame(RollingBuffer* graphData) : _graphData(graphData){
 }
 
 void GraphFrame::draw(OLEDDisplay* display) {
     drawGraph(display, 0, 0, 62, 32, _graphData->getData(), _graphData->count());
 }
 
-TemperatureGraphFrame::TemperatureGraphFrame(WindowedStack* graphData, float* temperature) : GraphFrame(graphData) {
-    _temperature = temperature;
-    _line2 = "";
+TemperatureGraphFrame::TemperatureGraphFrame(RollingBuffer* graphData, float* temperature)
+    : GraphFrame(graphData), _temperature(temperature), _line2("") {
 }
 
-TemperatureGraphFrame::TemperatureGraphFrame(WindowedStack* graphData, float* temperature, const char* line2) : GraphFrame(graphData) {
-    _temperature = temperature;
-    _line2 = line2;
+TemperatureGraphFrame::TemperatureGraphFrame(RollingBuffer* graphData, float* temperature, const char* line2)
+    : GraphFrame(graphData), _temperature(temperature), _line2(line2) {
 }
 
 void TemperatureGraphFrame::draw(OLEDDisplay* display) {
@@ -33,9 +28,8 @@ void TemperatureGraphFrame::draw(OLEDDisplay* display) {
     display->drawString(128, 16, _line2);
 }
 
-TemperatureHumidityGraphFrame::TemperatureHumidityGraphFrame(WindowedStack* graphData, float* temperature, float* humidity) : GraphFrame(graphData) {
-    _temperature = temperature;
-    _humidity = humidity;
+TemperatureHumidityGraphFrame::TemperatureHumidityGraphFrame(RollingBuffer* graphData, float* temperature, float* humidity)
+    : GraphFrame(graphData), _temperature(temperature), _humidity(humidity) {
 }
 
 void TemperatureHumidityGraphFrame::draw(OLEDDisplay* display) {

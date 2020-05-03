@@ -3,7 +3,6 @@
 #include <DallasTemperature.h>
 #include <ESP8266WiFi.h>
 
-#include "WindowedStack.h"
 #include "Frame.h"
 #include "GraphFrame.h"
 #include "WiFiFrame.h"

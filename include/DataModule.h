@@ -16,9 +16,9 @@ class DataModule : public Module {
         void setAuxTemp(float temp);
         void setHumidity(float hum);
 
-        float getTemp();
-        float getAuxTemp();
-        float getHumidity();
+        float getTemp() const;
+        float getAuxTemp() const;
+        float getHumidity() const;
     
         CollectedData* getTempData();
         CollectedData* getAuxTempData();

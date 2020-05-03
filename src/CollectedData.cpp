@@ -3,11 +3,11 @@
 CollectedData::CollectedData() : _value(0.), _minuteData(60), _hourData(60) {
 }
 
-WindowedStack* CollectedData::getMinuteData() {
+RollingBuffer* CollectedData::getMinuteData() {
     return &_minuteData;
 }
 
-WindowedStack* CollectedData::getHourData() {
+RollingBuffer* CollectedData::getHourData() {
     return &_hourData;
 }
 
@@ -20,7 +20,7 @@ void CollectedData::setValue(float value) {
     _value = value;
 }
 
-float CollectedData::getValue() {
+float CollectedData::getValue() const {
     return _value;
 }
 

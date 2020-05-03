@@ -16,7 +16,7 @@ void DataModule::setTemp(float temp) {
     _tempData.setValue(temp);
 }
 
-float DataModule::getTemp() {
+float DataModule::getTemp() const {
     return _tempData.getValue();
 }
 
@@ -24,7 +24,7 @@ void DataModule::setAuxTemp(float temp) {
     _auxTempData.setValue(temp);
 }
 
-float DataModule::getAuxTemp() {
+float DataModule::getAuxTemp() const {
     return _auxTempData.getValue();
 }
 
@@ -32,7 +32,7 @@ void DataModule::setHumidity(float hum) {
     _humidityData.setValue(hum);
 }
 
-float DataModule::getHumidity() {
+float DataModule::getHumidity() const {
     return _humidityData.getValue();
 }
 
