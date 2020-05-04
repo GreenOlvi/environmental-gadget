@@ -21,6 +21,8 @@
 
 #define AUX_SENSOR_UPDATE_DELAY 60 * 1000
 
+#define DISPLAY_SLEEP 10 * 1000
+
 DHTesp dht;
 OneWire ds(OTHER_ONE_WIRE_BUS);
 DallasTemperature auxSensors(&ds);
@@ -80,17 +82,21 @@ void setup() {
 
 int buttonState = HIGH;
 int currentFrame = 0;
+unsigned long lastButtonInput = 0;
 
 void onButtonPress(const unsigned long t) {
-  currentFrame++;
-  if (currentFrame >= framesCount) {
-    currentFrame = 0;
+  if (!displayModule.isOn()) {
+    displayModule.displayOn();
+  } else {
+    currentFrame++;
+    if (currentFrame >= framesCount) {
+      currentFrame = 0;
+    }
+    displayModule.setCurrentFrame(frames[currentFrame]);
   }
-  displayModule.setCurrentFrame(frames[currentFrame]);
 }
 
 void onButtonRelease(const unsigned long t) {
-
 }
 
 int lastButtonState = buttonState;
@@ -107,6 +113,7 @@ void updateButton(const unsigned long t) {
   if (t - lastDebounceTime > debounceDelay) {
     if (read != buttonState) {
       buttonState = read;
+      lastButtonInput = t;
       if (buttonState == LOW) {
         onButtonPress(t);
       } else {
@@ -151,11 +158,18 @@ void publish(const char* type, float value) {
 }
 #endif
 
+void displaySleepUpdate(const unsigned long t) {
+  if (displayModule.isOn() && t - lastButtonInput >= DISPLAY_SLEEP) {
+    displayModule.displayOff();
+  }
+}
+
 void loop() {
   unsigned long time = millis();
 
   updateButton(time);
   updateSensors(time);
+  displaySleepUpdate(time);
 
   for (int i = 0; i < updatablesCount; i++) {
     updatables[i]->update(time);

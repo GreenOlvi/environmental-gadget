@@ -1,16 +1,14 @@
 #include "DisplayModule.h"
 
 DisplayModule::DisplayModule()
-    : _display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32) {
+    : _display(DISPLAY_ADDR, SDA, SCL, GEOMETRY_128_32),
+    _isOn(true) {
 }
 
 void DisplayModule::setup() {
     _display.init();
     _display.flipScreenVertically();
-}
-
-OLEDDisplay* DisplayModule::getDisplay() {
-    return &_display;
+    _isOn = true;
 }
 
 void DisplayModule::setCurrentFrame(Frame* frame) {
@@ -18,7 +16,7 @@ void DisplayModule::setCurrentFrame(Frame* frame) {
 }
 
 void DisplayModule::update(unsigned long t) {
-  if (t >= nextDisplayUpdate) {
+  if (_isOn && t >= nextDisplayUpdate) {
     _display.clear();
     if (_currentFrame) {
         _currentFrame->draw(&_display);
@@ -29,6 +27,24 @@ void DisplayModule::update(unsigned long t) {
     _display.display();
     nextDisplayUpdate = t + DISPLAY_UPDATE_DELAY;
   }
+}
+
+void DisplayModule::displayOn() {
+    if (!_isOn) {
+        _display.displayOn();
+        _isOn = true;
+    }
+}
+
+void DisplayModule::displayOff() {
+    if (_isOn) {
+        _display.displayOff();
+        _isOn = false;
+    }
+}
+
+bool DisplayModule::isOn() {
+    return _isOn;
 }
 
 void DisplayModule::drawNoFrame() {

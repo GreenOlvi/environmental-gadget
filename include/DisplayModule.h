@@ -15,13 +15,16 @@ class DisplayModule : public Module {
         DisplayModule(void);
         void setup(void) override;
         void update(const unsigned long t) override;
-        OLEDDisplay* getDisplay(void);
         void setCurrentFrame(Frame* frame);
+        void displayOn(void);
+        void displayOff(void);
+        bool isOn(void);
     private:
         SSD1306Wire _display;
+        bool _isOn;
         unsigned long nextDisplayUpdate = 0;
         Frame* _currentFrame;
-        void drawNoFrame();
+        void drawNoFrame(void);
 };
 
 #endif
