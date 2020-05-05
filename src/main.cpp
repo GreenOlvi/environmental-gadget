@@ -1,6 +1,3 @@
-#include <DHTesp.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
 #include <ESP8266WiFi.h>
 
 #include "Frame.h"
@@ -9,23 +6,15 @@
 #include "Mqtt.h"
 #include "DisplayModule.h"
 #include "DataModule.h"
+#include "SensorsModule.h"
 #include "secrets.h"
 
 // #define PUBLISH_MQTT
 
 #define _countof(array) (sizeof(array) / sizeof(array[0]))
 
-#define ONE_WIRE_BUS D7
-#define OTHER_ONE_WIRE_BUS D5
 #define BUTTON_PIN D6
-
-#define AUX_SENSOR_UPDATE_DELAY 60 * 1000
-
 #define DISPLAY_SLEEP 10 * 1000
-
-DHTesp dht;
-OneWire ds(OTHER_ONE_WIRE_BUS);
-DallasTemperature auxSensors(&ds);
 
 #ifdef PUBLISH_MQTT
 MqttClient mqtt("envGadget", MQTT_HOST, MQTT_PORT);
@@ -33,6 +22,7 @@ MqttClient mqtt("envGadget", MQTT_HOST, MQTT_PORT);
 
 DisplayModule displayModule;
 DataModule dataModule;
+SensorsModule sensors(&dataModule);
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
@@ -41,9 +31,18 @@ float temperature = NAN;
 float humidity = NAN;
 float outTemperature = NAN;
 
-TemperatureHumidityGraphFrame insideMinuteTempFrame = TemperatureHumidityGraphFrame(dataModule.getTempData()->getMinuteData(), &temperature, &humidity);
-TemperatureHumidityGraphFrame insideHourTempFrame = TemperatureHumidityGraphFrame(dataModule.getTempData()->getHourData(), &temperature, &humidity);
-TemperatureGraphFrame outsideHourTempFrame = TemperatureGraphFrame(dataModule.getAuxTempData()->getHourData(), &outTemperature, "out");
+TemperatureHumidityGraphFrame insideMinuteTempFrame = TemperatureHumidityGraphFrame(
+  dataModule.getTempData()->getMinuteData(),
+  dataModule.getTempData()->valueRef(),
+  dataModule.getHumidityData()->valueRef());
+TemperatureHumidityGraphFrame insideHourTempFrame = TemperatureHumidityGraphFrame(
+  dataModule.getTempData()->getHourData(),
+  dataModule.getTempData()->valueRef(),
+  dataModule.getHumidityData()->valueRef());
+TemperatureGraphFrame outsideHourTempFrame = TemperatureGraphFrame(
+  dataModule.getAuxTempData()->getHourData(),
+  dataModule.getAuxTempData()->valueRef(),
+  "out");
 
 #ifdef PUBLISH_MQTT
 WiFiFrame wifiFrame = WiFiFrame(&mqtt);
@@ -61,6 +60,7 @@ Frame* frames[] = {
 const int framesCount = _countof(frames);
 
 Updatable* updatables[] = {
+  &sensors,
   &dataModule,
 #ifdef PUBLISH_MQTT
   &mqtt,
@@ -72,8 +72,7 @@ const int updatablesCount = _countof(updatables);
 
 void setup() {                
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  dht.setup(ONE_WIRE_BUS, DHTesp::AM2302);
-  auxSensors.begin();
+  sensors.setup();
   displayModule.setup();
   displayModule.setCurrentFrame(frames[0]);
   WiFi.mode(WIFI_STA);
@@ -123,33 +122,6 @@ void updateButton(const unsigned long t) {
   }
 }
 
-unsigned long nextSensorUpdate = 0;
-unsigned long nextAuxSensorUpdate = 0;
-void updateSensors(const unsigned long t) {
-  if (t >= nextSensorUpdate) {
-    temperature = dht.getTemperature();
-    humidity = dht.getHumidity();
-
-    dataModule.setTemp(temperature);
-    dataModule.setHumidity(humidity);
-
-    nextSensorUpdate = t + dht.getMinimumSamplingPeriod();
-  }
-
-  if (t >= nextAuxSensorUpdate) {
-    auxSensors.requestTemperatures();
-    float tempC = auxSensors.getTempCByIndex(0);
-    if (tempC != DEVICE_DISCONNECTED_C) {
-      outTemperature = tempC;
-      dataModule.setAuxTemp(tempC);
-    } else {
-      outTemperature = NAN;
-      dataModule.setAuxTemp(NAN);
-    }
-    nextAuxSensorUpdate = t + AUX_SENSOR_UPDATE_DELAY;
-  }
-}
-
 #ifdef PUBLISH_MQTT
 void publish(const char* type, float value) {
   char topic[30];
@@ -168,7 +140,6 @@ void loop() {
   unsigned long time = millis();
 
   updateButton(time);
-  updateSensors(time);
   displaySleepUpdate(time);
 
   for (int i = 0; i < updatablesCount; i++) {

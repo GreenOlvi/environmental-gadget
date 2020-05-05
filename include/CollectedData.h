@@ -15,6 +15,8 @@ class CollectedData : public Updatable {
         void setValue(float value);
         float getValue() const;
 
+        float* valueRef();
+
     private:
         float _value;
 

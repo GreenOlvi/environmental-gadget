@@ -24,6 +24,10 @@ float CollectedData::getValue() const {
     return _value;
 }
 
+float* CollectedData::valueRef() {
+    return &_value;
+}
+
 void CollectedData::secondUpdate(const unsigned long t) {
     if (t - _lastSecondUpdate >= 1000) {
         _minuteData.push(_value);
