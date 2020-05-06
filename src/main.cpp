@@ -7,6 +7,7 @@
 #include "DisplayModule.h"
 #include "DataModule.h"
 #include "SensorsModule.h"
+#include "InputModule.h"
 #include "secrets.h"
 
 // #define PUBLISH_MQTT
@@ -14,7 +15,7 @@
 #define _countof(array) (sizeof(array) / sizeof(array[0]))
 
 #define BUTTON_PIN D6
-#define DISPLAY_SLEEP 10 * 1000
+#define DISPLAY_SLEEP 60 * 1000
 
 #ifdef PUBLISH_MQTT
 MqttClient mqtt("envGadget", MQTT_HOST, MQTT_PORT);
@@ -23,6 +24,7 @@ MqttClient mqtt("envGadget", MQTT_HOST, MQTT_PORT);
 DisplayModule displayModule;
 DataModule dataModule;
 SensorsModule sensors(&dataModule);
+InputModule input(BUTTON_PIN);
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
@@ -62,6 +64,7 @@ const int framesCount = _countof(frames);
 Updatable* updatables[] = {
   &sensors,
   &dataModule,
+  &input,
 #ifdef PUBLISH_MQTT
   &mqtt,
 #endif
@@ -70,19 +73,7 @@ Updatable* updatables[] = {
 
 const int updatablesCount = _countof(updatables);
 
-void setup() {                
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  sensors.setup();
-  displayModule.setup();
-  displayModule.setCurrentFrame(frames[0]);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-}
-
-int buttonState = HIGH;
 int currentFrame = 0;
-unsigned long lastButtonInput = 0;
-
 void onButtonPress(const unsigned long t) {
   if (!displayModule.isOn()) {
     displayModule.displayOn();
@@ -98,29 +89,20 @@ void onButtonPress(const unsigned long t) {
 void onButtonRelease(const unsigned long t) {
 }
 
-int lastButtonState = buttonState;
-unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
-void updateButton(const unsigned long t) {
-  int read = digitalRead(BUTTON_PIN);
+void setup() {                
+  sensors.setup();
 
-  if (read != lastButtonState) {
-    lastDebounceTime = t;
-    lastButtonState = read;
-  }
+  input.setup();
+  input.onButtonPress(&onButtonPress);
+  input.onButtonRelease(&onButtonRelease);
 
-  if (t - lastDebounceTime > debounceDelay) {
-    if (read != buttonState) {
-      buttonState = read;
-      lastButtonInput = t;
-      if (buttonState == LOW) {
-        onButtonPress(t);
-      } else {
-        onButtonRelease(t);
-      }
-    }
-  }
+  displayModule.setup();
+  displayModule.setCurrentFrame(frames[0]);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
 }
+
 
 #ifdef PUBLISH_MQTT
 void publish(const char* type, float value) {
@@ -131,15 +113,16 @@ void publish(const char* type, float value) {
 #endif
 
 void displaySleepUpdate(const unsigned long t) {
-  if (displayModule.isOn() && t - lastButtonInput >= DISPLAY_SLEEP) {
+  if (displayModule.isOn() && t - input.lastButtonChange() >= DISPLAY_SLEEP) {
     displayModule.displayOff();
   }
 }
 
+unsigned long lastDebugMsg = 0;
+
 void loop() {
   unsigned long time = millis();
 
-  updateButton(time);
   displaySleepUpdate(time);
 
   for (int i = 0; i < updatablesCount; i++) {
