@@ -26,7 +26,7 @@ class SensorsModule : public Module {
         DallasTemperature _auxSensors;
 
         unsigned long _lastDhtUpdate = 0;
-        int _dhtSamplingPeriod;
+        unsigned int _dhtSamplingPeriod;
 
         unsigned long _lastAuxUpdate = 0;
 };

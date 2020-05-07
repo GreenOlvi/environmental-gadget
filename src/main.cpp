@@ -8,6 +8,7 @@
 #include "DataModule.h"
 #include "SensorsModule.h"
 #include "InputModule.h"
+#include "OtaModule.h"
 #include "secrets.h"
 
 // #define PUBLISH_MQTT
@@ -25,6 +26,7 @@ DisplayModule displayModule;
 DataModule dataModule;
 SensorsModule sensors(&dataModule);
 InputModule input(BUTTON_PIN);
+OtaModule ota(OTA_PASSWORD);
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
@@ -69,6 +71,7 @@ Updatable* updatables[] = {
   &mqtt,
 #endif
   &displayModule,
+  &ota,
 };
 
 const int updatablesCount = _countof(updatables);
@@ -101,6 +104,8 @@ void setup() {
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+
+  ota.setup();
 }
 
 
