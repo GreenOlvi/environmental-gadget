@@ -16,6 +16,7 @@ class DisplayModule : public Module {
         void setup(void) override;
         void update(const unsigned long t) override;
         void setCurrentFrame(Frame* frame);
+        Frame* getCurrentFrame();
         void displayOn(void);
         void displayOff(void);
         bool isOn(void);

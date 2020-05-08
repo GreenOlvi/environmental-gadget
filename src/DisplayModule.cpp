@@ -15,6 +15,10 @@ void DisplayModule::setCurrentFrame(Frame* frame) {
     _currentFrame = frame;
 }
 
+Frame* DisplayModule::getCurrentFrame() {
+    return _currentFrame;
+}
+
 void DisplayModule::update(unsigned long t) {
   if (_isOn && t >= nextDisplayUpdate) {
     _display.clear();

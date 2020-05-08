@@ -26,7 +26,7 @@ DisplayModule displayModule;
 DataModule dataModule;
 SensorsModule sensors(&dataModule);
 InputModule input(BUTTON_PIN);
-OtaModule ota(OTA_PASSWORD);
+OtaModule ota(OTA_PASSWORD, &displayModule);
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
