@@ -4,21 +4,26 @@
 
 #include "Mqtt.h"
 
-MqttClient::MqttClient(const char* clientId, const char* hostname, unsigned short port) {
-    _clientId = clientId;
-    WiFiClient wifiClient = WiFiClient();
-    _client = PubSubClient(wifiClient);
-    _client.setServer(hostname, port);
+MqttClient::MqttClient(const char* clientId, const char* hostname, unsigned short port)
+    : _clientId(clientId), _hostname(hostname), _port(port), _wifiClient(),  _client(_wifiClient) {
+}
+
+void MqttClient::setup() {
+    _client.setServer(_hostname, _port);
 }
 
 bool MqttClient::isConnected() {
     return _client.connected();
 }
 
+void MqttClient::connect() {
+    _client.connect(_clientId);
+}
+
 void MqttClient::update(unsigned long t) {
     if (t - _lastUpdate >= RECONNECT_DELAY) {
-        if (!isConnected() && WiFi.isConnected()) {
-            _client.connect(_clientId);
+        if (WiFi.isConnected() && !_client.connected()) {
+            connect();
         }
         _lastUpdate = t;
     }

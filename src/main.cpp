@@ -11,7 +11,7 @@
 #include "OtaModule.h"
 #include "secrets.h"
 
-// #define PUBLISH_MQTT
+#define PUBLISH_MQTT
 
 #define _countof(array) (sizeof(array) / sizeof(array[0]))
 
@@ -106,14 +106,26 @@ void setup() {
   WiFi.begin(ssid, password);
 
   ota.setup();
+
+  mqtt.setup();
 }
 
 
 #ifdef PUBLISH_MQTT
 void publish(const char* type, float value) {
   char topic[30];
-  sprintf(topic, "env/bedroom/%s", type);
+  sprintf(topic, "env/office/%s", type);
   mqtt.publish(topic, value);
+}
+
+unsigned long nextMqttPublish = 0;
+void mqttPublishUpdate(const unsigned long t) {
+  if (t >= nextMqttPublish) {
+    publish("temp_in", dataModule.getTemp());
+    publish("hum_in", dataModule.getHumidity());
+    publish("temp_aux", dataModule.getAuxTemp());
+    nextMqttPublish = t + 60 * 1000;
+  }
 }
 #endif
 
@@ -129,6 +141,7 @@ void loop() {
   unsigned long time = millis();
 
   displaySleepUpdate(time);
+  mqttPublishUpdate(time);
 
   for (int i = 0; i < updatablesCount; i++) {
     updatables[i]->update(time);
