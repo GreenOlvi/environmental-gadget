@@ -1,6 +1,6 @@
 #include "DataModule.h"
 
-DataModule::DataModule() : _tempData(), _auxTempData(), _humidityData() {
+DataModule::DataModule() : _tempData(), _humidityData() {
 }
 
 void DataModule::setup() {
@@ -8,7 +8,6 @@ void DataModule::setup() {
 
 void DataModule::update(const unsigned long t) {
     _tempData.update(t);
-    _auxTempData.update(t);
     _humidityData.update(t);
 }
 
@@ -18,14 +17,6 @@ void DataModule::setTemp(float temp) {
 
 float DataModule::getTemp() const {
     return _tempData.getValue();
-}
-
-void DataModule::setAuxTemp(float temp) {
-    _auxTempData.setValue(temp);
-}
-
-float DataModule::getAuxTemp() const {
-    return _auxTempData.getValue();
 }
 
 void DataModule::setHumidity(float hum) {
@@ -38,10 +29,6 @@ float DataModule::getHumidity() const {
 
 CollectedData* DataModule::getTempData() {
     return &_tempData;
-}
-
-CollectedData* DataModule::getAuxTempData() {
-    return &_auxTempData;
 }
 
 CollectedData* DataModule::getHumidityData() {

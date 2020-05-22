@@ -13,20 +13,16 @@ class DataModule : public Module {
         void update(const unsigned long t) override;
 
         void setTemp(float temp);
-        void setAuxTemp(float temp);
         void setHumidity(float hum);
 
         float getTemp() const;
-        float getAuxTemp() const;
         float getHumidity() const;
     
         CollectedData* getTempData();
-        CollectedData* getAuxTempData();
         CollectedData* getHumidityData();
 
     private:
         CollectedData _tempData;
-        CollectedData _auxTempData;
         CollectedData _humidityData;
 };
 
